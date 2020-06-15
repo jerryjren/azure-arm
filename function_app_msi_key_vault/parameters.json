@@ -1,0 +1,24 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "function_resource_name": {
+      "value":"arm-poc-fapp-ae-dv"
+    },
+    "consumptionplan_name": {
+      "value": "arm-poc-asp-ae-dv"
+    },        
+    "webStorageAccountResourceName":{
+      "value":"armpocstorageaccount"
+    },
+    "env_name": {
+      "value":"dv"
+    },
+    "keyvault_name": {
+      "value":"arm-kv-ae"
+    },
+    "application_name":{
+      "value": "arm-poc"
+    }
+  }
+}

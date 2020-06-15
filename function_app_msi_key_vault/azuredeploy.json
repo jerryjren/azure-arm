@@ -1,0 +1,173 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "function_resource_name": {
+            "type": "string",
+            "metadata":{
+                "description":"Name of the function app"
+            }
+        },
+        "consumptionplan_name": {
+            "type": "String",
+            "metadata": {
+                "description":"Name of the consumption plan"
+            }
+        },        
+        "webStorageAccountResourceName":{
+            "type":"string",
+            "metadata":{
+                "description":"Name of the web storage account resource"
+            }
+        },
+        "env_name": {
+            "type": "string",
+            "metadata":{
+                "description":"Name of the environment"
+            }
+        },
+        "keyvault_name": {
+            "type":"string",
+            "metadata": {
+                "description":"Name of the key vault"
+            }
+        },
+        "application_name": {
+            "type": "string",
+            "metadata": {
+                "description":"Name of the application"
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-04-01",
+            "name": "[parameters('webStorageAccountResourceName')]",
+            "location": "australiaeast",
+            "tags": {
+                "Application": "[parameters('application_name')]", 
+                "Environment": "[parameters('env_name')]"
+            },
+            "sku": {
+                "name": "Standard_RAGRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2"
+        },        
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[parameters('consumptionplan_name')]",
+            "location": "australiaeast",
+            "tags": {
+                "Application": "[parameters('application_name')]",
+                "Environment": "[parameters('env_name')]"
+            },
+            "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+            },
+            "kind": "functionapp",
+            "properties": {
+                "name": "[parameters('consumptionplan_name')]",
+                "computeMode": "Dynamic"
+            }
+        },        
+        {
+            "type": "microsoft.insights/components",
+            "name": "[parameters('function_resource_name')]",
+            "apiVersion": "2015-05-01",
+            "location": "australiaeast",
+            "properties": {
+                "ApplicationId": "[parameters('function_resource_name')]",
+                "Application_Type": "General",
+                "Flow_Type": "Redfield"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2016-08-01",
+            "name": "[parameters('function_resource_name')]",
+            "location": "australiaeast",
+            "kind": "functionapp",
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('consumptionplan_name'))]", 
+                "siteConfig": {}
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },            
+            "resources":[
+                {
+                    "type": "siteextensions",
+                    "apiVersion": "2016-08-01",
+                    "name": "Microsoft.ApplicationInsights.AzureWebSites",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('function_resource_name'))]"
+                    ],
+                    "properties": {}
+                },
+                {
+                    "type":"config",
+                    "name":"appsettings",
+                    "apiVersion":"2016-08-01",
+                    "properties":{
+                        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('microsoft.insights/components', parameters('function_resource_name')), '2015-05-01').InstrumentationKey]",
+                        "FUNCTIONS_EXTENSION_VERSION":"~3",
+                        "FUNCTIONS_WORKER_RUNTIME":"dotnet",
+                        "AzureWebJobsDashboard":"[Concat('DefaultEndpointsProtocol=https;AccountName=',parameters('webStorageAccountResourceName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('webStorageAccountResourceName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]",
+                        "AzureWebJobsStorage":"[Concat('DefaultEndpointsProtocol=https;AccountName=',parameters('webStorageAccountResourceName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('webStorageAccountResourceName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value)]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('function_resource_name'))]",
+                        "Microsoft.ApplicationInsights.AzureWebSites"
+                    ]
+                }
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('consumptionplan_name'))]"
+            ]            
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2016-10-01",
+            "name": "[parameters('keyvault_name')]",
+            "location": "australiaeast",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false,
+                "enableSoftDelete": true,
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', parameters('function_resource_name')), '2019-08-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "List"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "List"
+                            ]
+                        }
+                    }
+                ]                
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('function_resource_name'))]"                
+            ]
+        }        
+    ]
+}
