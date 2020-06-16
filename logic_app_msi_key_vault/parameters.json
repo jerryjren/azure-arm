@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "logic_app_name": {
+      "value": "arm-lapp-ae-poc"
+    },
+    "key_vault_name": {
+        "value":"arm-kv-ae-poc"
+    },
+    "secretValue": {
+        "value":"secretsecret"
+    },
+    "secretName": {
+        "value":"TopSecret"
+    }
+  }
+}
