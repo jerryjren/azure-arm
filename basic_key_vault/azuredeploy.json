@@ -8,12 +8,6 @@
                 "description":"Name of the key vault"
             }
         },
-		"location":{
-			"type":"String",
-            "metadata": {
-                "description": "Name of the location"
-            }
-		},
         "application_name": {
             "type": "string",
             "metadata": {
@@ -33,7 +27,7 @@
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2016-10-01",
             "name": "[parameters('keyvault_name')]",
-            "location": "[parameters('location')]",
+            "location": "[resourceGroup().location]",
             "tags": {
                 "Application": "[parameters('application_name')]", 
                 "Environment": "[parameters('env_name')]"
