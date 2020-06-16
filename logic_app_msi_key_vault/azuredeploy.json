@@ -134,6 +134,13 @@
                                 "uri": "[concat('https://', parameters('key_vault_name'), '.vault.azure.net/secrets/', parameters('secretName') ,'?api-version=7.0')]"
                             },
                             "runAfter": {},
+                            "runtimeConfiguration": {
+                                "secureData": {
+                                    "properties": [
+                                        "outputs"
+                                    ]
+                                }
+                            },
                             "type": "Http"
                         },
                         "HTTP": {
